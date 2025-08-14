@@ -1,44 +1,44 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" class="transition-colors duration-300">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - GMod Roleplay Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 font-sans leading-normal tracking-normal">
-
-<nav class="bg-white shadow-md">
+<body class="bg-gray-100 dark:bg-gray-900 font-sans leading-normal tracking-normal transition-colors duration-300">
+<nav class="bg-white dark:bg-gray-800 shadow-md">
     <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-        <a href="#" class="text-2xl font-bold text-gray-800">GMod Admin Dashboard</a>
+        <a href="#" class="text-2xl font-bold text-gray-800 dark:text-white">GMod Admin Dashboard</a>
         <div class="flex items-center space-x-4">
-            <a href="#" class="text-gray-600 hover:text-gray-800">Server Status</a>
-            <a href="#" class="text-gray-600 hover:text-gray-800">Benutzer</a>
-            <a href="#" class="text-gray-600 hover:text-gray-800">Logs</a>
+            <span id="username-display" class="text-gray-600 dark:text-gray-400">Loading...</span>
             <button id="logout-button" class="py-2 px-4 bg-red-500 text-white rounded-md hover:bg-red-600">
                 Logout
             </button>
         </div>
     </div>
 </nav>
-
-<div class="container mx-auto mt-8 px-6">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">Willkommen im Dashboard!</h1>
-
-    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-        <h2 class="text-xl font-semibold text-gray-700 mb-4">Server Status</h2>
-        <div id="server-status" class="text-lg text-gray-600">
-            Lade Server-Informationen...
+<div class="container mx-auto mt-6 px-6">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <div class="w-4 h-4 rounded-full bg-green-500" id="status-light"></div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white" id="server-name-display">Servername: N/A</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Status: <span id="server-status-text">Online</span></p>
+            </div>
         </div>
-    </div>
-
-    <div class="bg-white p-6 rounded-lg shadow-md">
-        <h2 class="text-xl font-semibold text-gray-700 mb-4">Spielerverwaltung</h2>
-        <p class="text-gray-600">Hier werden bald die Tools zur Verwaltung der Spieler angezeigt.</p>
+        <div class="text-right">
+            <p class="text-xl font-bold text-gray-800 dark:text-white">
+                <span id="player-count">0</span> / <span id="max-players">0</span>
+            </p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Players online</p>
+        </div>
     </div>
 </div>
 
+<div class="container mx-auto mt-8 px-6">
+    <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-6">Welcome in the Dashboard!</h1>
+</div>
 <script src="dashboard.js"></script>
-
 </body>
 </html>

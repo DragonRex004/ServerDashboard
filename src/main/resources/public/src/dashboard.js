@@ -1,28 +1,28 @@
 const logoutButton = document.getElementById('logout-button');
 
-    logoutButton.addEventListener('click', async () => {
-        const response = await fetch('/api/logout', { method: 'POST' });
+logoutButton.addEventListener('click', async () => {
+    const response = await fetch('/api/logout', {method: 'POST'});
 
-        if (response.ok) {
-            window.location.href = '/';
-        } else {
-            console.error('Logout failed.');
-        }
-    });
-
-    async function fetchUsername() {
-        const response = await fetch('/api/user/me');
-        if (response.ok) {
-            const data = await response.json();
-            document.getElementById('username-display').textContent = data.username;
-        } else {
-            document.getElementById('username-display').textContent = 'Guest';
-        }
+    if (response.ok) {
+        window.location.href = '/';
+    } else {
+        console.error('Logout failed.');
     }
+});
 
-    document.addEventListener('DOMContentLoaded', () => {
-        fetchUsername().then(r => console.log("Username loaded!"));
-    });
+async function fetchUsername() {
+    const response = await fetch('/api/user/me');
+    if (response.ok) {
+        const data = await response.json();
+        document.getElementById('username-display').textContent = data.username;
+    } else {
+        document.getElementById('username-display').textContent = 'Guest';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    fetchUsername().then(r => console.log("Username loaded!"));
+});
 
 const playerCountSpan = document.getElementById('player-count');
 const maxPlayersSpan = document.getElementById('max-players');

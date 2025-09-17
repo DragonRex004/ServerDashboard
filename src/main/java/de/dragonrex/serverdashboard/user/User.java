@@ -1,4 +1,4 @@
-package de.dragonrex.user;
+package de.dragonrex.serverdashboard.user;
 
 public class User {
     private String name;

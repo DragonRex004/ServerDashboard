@@ -1,22 +1,27 @@
-const loginForm = document.getElementById('loginForm');
-    const messageDiv = document.getElementById('message');
-
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const formData = new FormData(loginForm);
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            body: new URLSearchParams(formData)
-        });
-
-        if (response.ok) {
-            // Erfolgreicher Login
-            window.location.href = '/dashboard';
-        } else {
-            // Fehlgeschlagener Login
-            const errorMessage = await response.text();
-            messageDiv.textContent = errorMessage;
-            messageDiv.className = 'text-center mt-4 text-red-500';
-        }
-    });
+// Korrektes JSON-Login
+fetch('/api/login', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    },
+    body: JSON.stringify({ 
+        username: username, 
+        password: password 
+    })
+})
+.then(response => {
+    if (response.ok) {
+        return response.json();
+    } else {
+        throw new Error('Login fehlgeschlagen');
+    }
+})
+.then(data => {
+    if (data.success && data.redirect) {
+        window.location.href = data.redirect;
+    }
+})
+.catch(error => {
+    console.error('Login-Fehler:', error);
+});

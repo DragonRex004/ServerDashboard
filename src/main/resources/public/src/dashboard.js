@@ -21,7 +21,7 @@ async function fetchUsername() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    fetchUsername().then(r => console.log("Username loaded!"));
+    fetchUsername().then(() => console.log("Username loaded!"));
 });
 
 const playerCountSpan = document.getElementById('player-count');
@@ -33,7 +33,7 @@ const serverStatusText = document.getElementById('server-status-text');
 function setupWebSocket() {
     const ws = new WebSocket("ws://localhost:7070/ws/dashboard");
 
-    ws.onopen = (event) => {
+    ws.onopen = () => {
         console.log("WebSocket-Verbindung zum Dashboard hergestellt.");
         statusLight.classList.remove('bg-red-500');
         statusLight.classList.add('bg-green-500');
@@ -63,6 +63,6 @@ function setupWebSocket() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    fetchUsername();
+    fetchUsername().then(() => console.log("Username loaded!"));
     setupWebSocket();
 });

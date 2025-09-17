@@ -4,6 +4,7 @@ import de.dragonrex.serverdashboard.config.AppConfig;
 import io.javalin.Javalin;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 public class ApiController {
@@ -40,7 +41,6 @@ public class ApiController {
             ));
         });
 
-        // Öffentliche App-Informationen
         app.get("/api/info", ctx -> {
             ctx.json(Map.of(
                 "application", Map.of(
@@ -60,7 +60,6 @@ public class ApiController {
             ));
         });
 
-        // Gesicherte API-Endpoints (erfordern Authentifizierung)
         app.get("/api/user/profile", ctx -> {
             String username = ctx.sessionAttribute("username");
             if (username == null) {
@@ -71,7 +70,7 @@ public class ApiController {
             ctx.json(Map.of(
                 "username", username,
                 "sessionTimeout", appConfig.getSessionTimeout(),
-                "loginTime", ctx.sessionAttribute("loginTime")
+                "loginTime", Objects.requireNonNull(ctx.sessionAttribute("loginTime"))
             ));
         });
 
@@ -86,7 +85,7 @@ public class ApiController {
         });
     }
 
-    private long startTime = System.currentTimeMillis();
+    private final long startTime = System.currentTimeMillis();
 
     private long getStartTime() {
         return startTime;

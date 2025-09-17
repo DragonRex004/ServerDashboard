@@ -57,7 +57,6 @@ public class AppConfig {
             return new JSONObject(content);
         } catch (Exception e) {
             System.err.println("Fehler beim Laden der config.json: " + e.getMessage());
-            // Fallback zu Standard-Konfiguration
             return createDefaultConfig();
         }
     }
@@ -117,11 +116,11 @@ public class AppConfig {
         JSONObject admin = configJson.optJSONObject("admin");
         if (admin != null) {
             this.adminConfig = new AdminConfig(
-                admin.optString("username", "admin"),
-                admin.optString("password", "admin123"),
-                admin.optString("email", "admin@serverdashboard.local"),
-                admin.optString("role", "administrator"),
-                parseStringArray(admin.optJSONArray("permissions"))
+                    admin.optString("username", "admin"),
+                    admin.optString("password", "admin123"),
+                    admin.optString("email", "admin@serverdashboard.local"),
+                    admin.optString("role", "administrator"),
+                    parseStringArray(admin.optJSONArray("permissions"))
             );
         } else {
             this.adminConfig = new AdminConfig("admin", "admin123", "admin@serverdashboard.local", "administrator", List.of("user_management", "system_configuration"));
@@ -133,11 +132,11 @@ public class AppConfig {
             for (int i = 0; i < defaultUsersArray.length(); i++) {
                 JSONObject user = defaultUsersArray.getJSONObject(i);
                 this.defaultUsers.add(new UserConfig(
-                    user.optString("username", "user"),
-                    user.optString("password", "user123"),
-                    user.optString("email", "user@serverdashboard.local"),
-                    user.optString("role", "user"),
-                    parseStringArray(user.optJSONArray("permissions"))
+                        user.optString("username", "user"),
+                        user.optString("password", "user123"),
+                        user.optString("email", "user@serverdashboard.local"),
+                        user.optString("role", "user"),
+                        parseStringArray(user.optJSONArray("permissions"))
                 ));
             }
         }
@@ -214,15 +213,7 @@ public class AppConfig {
         this.twoFactorAuth = false;
     }
 
-    // Inner Classes
-    @Getter
-    public static class AdminConfig {
-        private final String username;
-        private final String password;
-        private final String email;
-        private final String role;
-        private final List<String> permissions;
-
+    public record AdminConfig(String username, String password, String email, String role, List<String> permissions) {
         public AdminConfig(String username, String password, String email, String role, List<String> permissions) {
             this.username = username;
             this.password = password;
@@ -232,14 +223,7 @@ public class AppConfig {
         }
     }
 
-    @Getter
-    public static class UserConfig {
-        private final String username;
-        private final String password;
-        private final String email;
-        private final String role;
-        private final List<String> permissions;
-
+    public record UserConfig(String username, String password, String email, String role, List<String> permissions) {
         public UserConfig(String username, String password, String email, String role, List<String> permissions) {
             this.username = username;
             this.password = password;

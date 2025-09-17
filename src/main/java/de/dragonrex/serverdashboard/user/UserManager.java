@@ -7,7 +7,6 @@ import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Getter
 public class UserManager {
@@ -65,8 +64,8 @@ public class UserManager {
         DatabaseResult result = null;
         try {
             result = databaseHandler.processor().query(
-                "SELECT COUNT(*) as count FROM users WHERE username = ? AND password = ?", 
-                username, password
+                    "SELECT COUNT(*) as count FROM users WHERE username = ? AND password = ?",
+                    username, password
             );
 
             if (result.next()) {
@@ -87,25 +86,22 @@ public class UserManager {
 
     public boolean addUser(String username, String password) {
         try {
-            // Prüfen ob Benutzer bereits existiert
             DatabaseResult checkResult = databaseHandler.processor().query(
-                "SELECT COUNT(*) as count FROM users WHERE username = ?", username
+                    "SELECT COUNT(*) as count FROM users WHERE username = ?", username
             );
 
             if (checkResult.next() && checkResult.getInt("count") > 0) {
                 checkResult.close();
-                return false; // Benutzer existiert bereits
+                return false;
             }
             checkResult.close();
 
-            // Neuen Benutzer hinzufügen
             DatabaseResult result = databaseHandler.processor().update(
-                "INSERT INTO users (username, password) VALUES (?, ?)", 
-                username, password
+                    "INSERT INTO users (username, password) VALUES (?, ?)",
+                    username, password
             );
             result.close();
 
-            // Benutzerliste neu laden
             loadUser();
             return true;
         } catch (Exception e) {
@@ -115,142 +111,126 @@ public class UserManager {
         }
     }
 
-        /**
-         * Fügt einen Benutzer zur MongoDB users collection hinzu
-         */
-        private boolean addUserToMongo(String username, String password, String email, String role, List<String> permissions) {
-            DatabaseResult result = null;
+    private boolean addUserToMongo(String username, String password, String email, String role, List<String> permissions) {
+        DatabaseResult result = null;
 
-            try {
-                // Prüfe ob Benutzer bereits existiert
-                result = databaseHandler.processor().query("users", "username:" + username);
+        try {
+            result = databaseHandler.processor().query("users", "username:" + username);
 
-                boolean userExists = false;
-                if (result.next()) {
-                    userExists = true;
-                }
-                result.close();
+            boolean userExists = false;
+            if (result.next()) {
+                userExists = true;
+            }
+            result.close();
 
-                if (userExists) {
-                    System.out.println("MongoDB-Benutzer existiert bereits: " + username);
-                    return false;
-                }
+            if (userExists) {
+                System.out.println("MongoDB-Benutzer existiert bereits: " + username);
+                return false;
+            }
 
-                // Erstelle Benutzer-Dokument
-                String userDocument = String.format("""
-                    {
-                        "username": "%s",
-                        "password": "%s",
-                        "email": "%s",
-                        "role": "%s",
-                        "permissions": %s,
-                        "created_at": "%s"
-                    }
-                    """, 
-                    username, 
-                    password, 
-                    email, 
+            String userDocument = String.format("""
+                            {
+                                "username": "%s",
+                                "password": "%s",
+                                "email": "%s",
+                                "role": "%s",
+                                "permissions": %s,
+                                "created_at": "%s"
+                            }
+                            """,
+                    username,
+                    password,
+                    email,
                     role,
                     formatPermissionsForMongo(permissions),
                     java.time.Instant.now().toString()
-                );
+            );
 
-                // Benutzer in MongoDB einfügen
-                result = databaseHandler.processor().update("users", "INSERT", userDocument);
+            result = databaseHandler.processor().update("users", "INSERT", userDocument);
+            result.close();
+
+            System.out.println("MongoDB-Benutzer erfolgreich hinzugefügt: " + username + " (Rolle: " + role + ")");
+            return true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Fehler beim Hinzufügen des MongoDB-Benutzers: " + e.getMessage());
+            return false;
+        } finally {
+            if (result != null) {
                 result.close();
-
-                System.out.println("MongoDB-Benutzer erfolgreich hinzugefügt: " + username + " (Rolle: " + role + ")");
-                return true;
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.err.println("Fehler beim Hinzufügen des MongoDB-Benutzers: " + e.getMessage());
-                return false;
-            } finally {
-                if (result != null) {
-                    result.close();
-                }
             }
         }
+    }
 
-        /**
-         * Formatiert Berechtigungen für MongoDB-JSON
-         */
-        private String formatPermissionsForMongo(List<String> permissions) {
-            if (permissions == null || permissions.isEmpty()) {
-                return "[]";
-            }
-
-            StringBuilder sb = new StringBuilder("[");
-            for (int i = 0; i < permissions.size(); i++) {
-                if (i > 0) sb.append(", ");
-                sb.append("\"").append(permissions.get(i)).append("\"");
-            }
-            sb.append("]");
-            return sb.toString();
+    private String formatPermissionsForMongo(List<String> permissions) {
+        if (permissions == null || permissions.isEmpty()) {
+            return "[]";
         }
 
-        /**
-         * Lädt Benutzer aus MongoDB users collection
-         */
-        public void loadUsersFromMongo() {
-            this.userList.clear();
-            DatabaseResult result = null;
-
-            try {
-                result = databaseHandler.processor().query("users");
-
-                while (result.next()) {
-                    String username = result.getString("username");
-                    String password = result.getString("password");
-                    this.userList.add(new User(username, password));
-                }
-
-                System.out.println("MongoDB-Benutzer geladen: " + userList.size() + " Benutzer gefunden");
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.err.println("Fehler beim Laden der Benutzer aus MongoDB: " + e.getMessage());
-            } finally {
-                if (result != null) {
-                    result.close();
-                }
-            }
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < permissions.size(); i++) {
+            if (i > 0) sb.append(", ");
+            sb.append("\"").append(permissions.get(i)).append("\"");
         }
+        sb.append("]");
+        return sb.toString();
+    }
 
-        /**
-         * Authentifiziert Benutzer gegen MongoDB users collection
-         */
-        public boolean authenticateUserMongo(String username, String password) {
-            DatabaseResult result = null;
+    public void loadUsersFromMongo() {
+        this.userList.clear();
+        DatabaseResult result = null;
 
-            try {
-                result = databaseHandler.processor().query("users", "username:" + username, "password:" + password);
+        try {
+            result = databaseHandler.processor().query("users");
 
-                boolean authenticated = result.next();
+            while (result.next()) {
+                String username = result.getString("username");
+                String password = result.getString("password");
+                this.userList.add(new User(username, password));
+            }
+
+            System.out.println("MongoDB-Benutzer geladen: " + userList.size() + " Benutzer gefunden");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Fehler beim Laden der Benutzer aus MongoDB: " + e.getMessage());
+        } finally {
+            if (result != null) {
                 result.close();
-
-                return authenticated;
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.err.println("Fehler bei der MongoDB-Benutzerauthentifizierung: " + e.getMessage());
-                return false;
-            } finally {
-                if (result != null) {
-                    result.close();
-                }
             }
         }
+    }
+
+    public boolean authenticateUserMongo(String username, String password) {
+        DatabaseResult result = null;
+
+        try {
+            result = databaseHandler.processor().query("users", "username:" + username, "password:" + password);
+
+            boolean authenticated = result.next();
+            result.close();
+
+            return authenticated;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Fehler bei der MongoDB-Benutzerauthentifizierung: " + e.getMessage());
+            return false;
+        } finally {
+            if (result != null) {
+                result.close();
+            }
+        }
+    }
 
     public boolean removeUser(String username) {
         try {
             DatabaseResult result = databaseHandler.processor().update(
-                "DELETE FROM users WHERE username = ?", username
+                    "DELETE FROM users WHERE username = ?", username
             );
             result.close();
 
-            // Benutzerliste neu laden
             loadUser();
             return true;
         } catch (Exception e) {
@@ -276,17 +256,14 @@ public class UserManager {
         DatabaseResult countResult = null;
 
         try {
-            // Prüfe ob users collection bereits Dokumente enthält
             countResult = databaseHandler.processor().query("users");
 
-            // Zähle vorhandene Dokumente
             int userCount = 0;
             while (countResult.next()) {
                 userCount++;
             }
 
             if (userCount == 0) {
-                // Keine Benutzer vorhanden - Standard-Benutzer aus config.json hinzufügen
                 loadUsersFromConfigForMongo();
                 System.out.println("Standard-Benutzer aus config.json wurden zur MongoDB users collection hinzugefügt.");
             } else {
@@ -296,7 +273,6 @@ public class UserManager {
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println("Fehler beim Initialisieren der MongoDB users collection: " + e.getMessage());
-            // Fallback: Standard-Benutzer trotzdem hinzufügen
             try {
                 loadUsersFromConfigForMongo();
             } catch (Exception fallbackError) {
@@ -314,17 +290,16 @@ public class UserManager {
         DatabaseResult countResult = null;
 
         try {
-            // Tabelle erstellen falls sie nicht existiert
             String createTableSQL = """
-                CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username VARCHAR(50) UNIQUE NOT NULL,
-                    password VARCHAR(255) NOT NULL,
-                    email VARCHAR(100),
-                    role VARCHAR(20) DEFAULT 'user',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-                """;
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username VARCHAR(50) UNIQUE NOT NULL,
+                        password VARCHAR(255) NOT NULL,
+                        email VARCHAR(100),
+                        role VARCHAR(20) DEFAULT 'user',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """;
 
             createResult = databaseHandler.processor().update(createTableSQL);
 
@@ -338,10 +313,8 @@ public class UserManager {
         }
 
         try {
-            // Standard-Benutzer aus config.json laden falls Tabelle leer ist
             countResult = databaseHandler.processor().query("SELECT COUNT(*) as count FROM users");
             if (countResult.next() && countResult.getInt("count") == 0) {
-                // Benutzer aus config.json hinzufügen
                 loadUsersFromConfig();
 
                 System.out.println("Standard-Benutzer aus config.json wurden zur Datenbank hinzugefügt.");
@@ -359,21 +332,18 @@ public class UserManager {
 
     private void loadUsersFromConfig() {
         try {
-            // Admin-Benutzer aus AppConfig hinzufügen
             AppConfig.AdminConfig admin = appConfig.getAdminConfig();
-            addUserWithDetails(admin.getUsername(), admin.getPassword(), admin.getEmail(), admin.getRole());
-            System.out.println("Admin-Benutzer aus Konfiguration hinzugefügt: " + admin.getUsername());
+            addUserWithDetails(admin.username(), admin.password(), admin.email(), admin.role());
+            System.out.println("Admin-Benutzer aus Konfiguration hinzugefügt: " + admin.username());
 
-            // Standard-Benutzer aus AppConfig hinzufügen
             for (AppConfig.UserConfig user : appConfig.getDefaultUsers()) {
-                addUserWithDetails(user.getUsername(), user.getPassword(), user.getEmail(), user.getRole());
-                System.out.println("Standard-Benutzer aus Konfiguration hinzugefügt: " + user.getUsername());
+                addUserWithDetails(user.username(), user.password(), user.email(), user.role());
+                System.out.println("Standard-Benutzer aus Konfiguration hinzugefügt: " + user.username());
             }
 
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println("Fehler beim Laden der Benutzer aus AppConfig: " + e.getMessage());
-            // Fallback zu den ursprünglichen Standard-Benutzern
             addUser("admin", "admin");
             addUser("user", "user");
         }
@@ -381,15 +351,13 @@ public class UserManager {
 
     private void loadUsersFromConfigForMongo() {
         try {
-            // Admin-Benutzer aus AppConfig für MongoDB hinzufügen
             AppConfig.AdminConfig admin = appConfig.getAdminConfig();
-            addUserToMongo(admin.getUsername(), admin.getPassword(), admin.getEmail(), admin.getRole(), admin.getPermissions());
-            System.out.println("Admin-Benutzer zu MongoDB hinzugefügt: " + admin.getUsername());
+            addUserToMongo(admin.username(), admin.password(), admin.email(), admin.role(), admin.permissions());
+            System.out.println("Admin-Benutzer zu MongoDB hinzugefügt: " + admin.username());
 
-            // Standard-Benutzer aus AppConfig für MongoDB hinzufügen
             for (AppConfig.UserConfig user : appConfig.getDefaultUsers()) {
-                addUserToMongo(user.getUsername(), user.getPassword(), user.getEmail(), user.getRole(), user.getPermissions());
-                System.out.println("Standard-Benutzer zu MongoDB hinzugefügt: " + user.getUsername());
+                addUserToMongo(user.username(), user.password(), user.email(), user.role(), user.permissions());
+                System.out.println("Standard-Benutzer zu MongoDB hinzugefügt: " + user.username());
             }
 
         } catch (Exception e) {
@@ -399,7 +367,6 @@ public class UserManager {
     }
 
     public boolean addUserWithDetails(String username, String password, String email, String role) {
-        // Passwort-Validierung basierend auf Security-Konfiguration
         if (password.length() < appConfig.getPasswordMinLength()) {
             System.err.println("Passwort zu kurz. Mindestlänge: " + appConfig.getPasswordMinLength());
             return false;
@@ -409,14 +376,13 @@ public class UserManager {
         DatabaseResult insertResult = null;
 
         try {
-            // Prüfen ob Benutzer bereits existiert
             checkResult = databaseHandler.processor().query(
-                "SELECT COUNT(*) as count FROM users WHERE username = ?", username
+                    "SELECT COUNT(*) as count FROM users WHERE username = ?", username
             );
 
             if (checkResult.next() && checkResult.getInt("count") > 0) {
                 System.out.println("Benutzer existiert bereits: " + username);
-                return false; // Benutzer existiert bereits
+                return false;
             }
 
         } catch (Exception e) {
@@ -429,13 +395,11 @@ public class UserManager {
         }
 
         try {
-            // Neuen Benutzer mit Details hinzufügen
             insertResult = databaseHandler.processor().update(
-                "INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)", 
-                username, password, email, role
+                    "INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)",
+                    username, password, email, role
             );
 
-            // Benutzerliste neu laden
             loadUser();
             System.out.println("Benutzer erfolgreich hinzugefügt: " + username + " (Rolle: " + role + ")");
             return true;

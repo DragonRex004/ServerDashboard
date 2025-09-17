@@ -28,8 +28,6 @@ public class DashboardController {
             }
         });
 
-        // Dashboard.html wird automatisch als statische Datei bereitgestellt
-        // Nur Session-Validierung durchführen
         app.before("/dashboard.html", ctx -> {
             String username = ctx.sessionAttribute("username");
             if (username == null) {
@@ -37,7 +35,6 @@ public class DashboardController {
                 return;
             }
 
-            // Session-Validierung
             Long loginTime = ctx.sessionAttribute("loginTime");
             if (loginTime != null) {
                 long sessionAge = System.currentTimeMillis() - loginTime;
@@ -51,7 +48,6 @@ public class DashboardController {
             LOGGER.info("Dashboard angezeigt für Benutzer: " + username);
         });
 
-        // Dashboard-API für dynamische Inhalte
         app.get("/api/dashboard/info", ctx -> {
             String username = ctx.sessionAttribute("username");
             if (username == null) {
@@ -77,5 +73,4 @@ public class DashboardController {
             ));
         });
     }
-
 }

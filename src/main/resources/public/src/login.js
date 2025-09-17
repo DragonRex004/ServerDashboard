@@ -11,12 +11,9 @@ loginForm.addEventListener('submit', async (event) => {
     });
 
     if (response.ok) {
-        // Erfolgreicher Login
         window.location.href = '/dashboard';
     } else {
-        // Fehlgeschlagener Login
-        const errorMessage = await response.text();
-        messageDiv.textContent = errorMessage;
+        messageDiv.textContent = await response.text();
         messageDiv.className = 'text-center mt-4 text-red-500';
     }
 });

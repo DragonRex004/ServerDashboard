@@ -5,6 +5,7 @@ import de.dragonrex.serverdashboard.user.UserManager;
 import io.javalin.Javalin;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -25,12 +26,10 @@ public class LoginController {
             String password = ctx.formParam("password");
             String clientIp = ctx.ip();
 
-            // Unterstütze sowohl JSON- als auch Form-Parameter
             String contentType = ctx.header("Content-Type");
             LOGGER.info("Content-Type: " + contentType);
             LOGGER.info("Body: " + ctx.body());
 
-            // Prüfe maximale Login-Versuche
             if (isBlocked(clientIp)) {
                 ctx.status(429);
                 ctx.result("Zu viele Login-Versuche. Bitte versuchen Sie es später erneut.");
@@ -39,20 +38,17 @@ public class LoginController {
             }
 
             if (isValidUser(username, password)) {
-                // Erfolgreiche Anmeldung - Versuche zurücksetzen
                 resetLoginAttempts(clientIp);
 
                 ctx.sessionAttribute("username", username);
                 ctx.sessionAttribute("loginTime", System.currentTimeMillis());
 
-                // Benutzerrolle basierend auf Authentifizierungsquelle setzen
                 String userRole = getUserRole(username.trim());
                 ctx.sessionAttribute("userRole", userRole);
                 LOGGER.info("Benutzerrolle für " + username + ": " + userRole);
 
                 ctx.status(200);
 
-                // Für JSON-Requests JSON-Response senden, sonst Redirect
                 if (contentType != null && contentType.contains("application/json")) {
                     ctx.json(Map.of("success", true, "message", "Erfolgreich angemeldet", "redirect", "/dashboard.html"));
                 } else {
@@ -61,12 +57,10 @@ public class LoginController {
 
                 LOGGER.info("Erfolgreiche Anmeldung: " + username + " von IP: " + clientIp);
             } else {
-                // Fehlgeschlagene Anmeldung - Versuche zählen
                 incrementLoginAttempts(clientIp);
 
                 ctx.status(401);
 
-                // Für JSON-Requests JSON-Response senden, sonst Text
                 if (contentType != null && contentType.contains("application/json")) {
                     ctx.json(Map.of("success", false, "message", "Ungültiger Benutzername oder Passwort."));
                 } else {
@@ -87,7 +81,6 @@ public class LoginController {
             }
         });
 
-        // Session-Validation-Endpoint
         app.get("/api/session/validate", ctx -> {
             String username = ctx.sessionAttribute("username");
             Long loginTime = ctx.sessionAttribute("loginTime");
@@ -125,7 +118,6 @@ public class LoginController {
             return false;
         }
 
-        // Passwort-Mindestlänge prüfen
         if (password.length() < appConfig.getPasswordMinLength()) {
             LOGGER.info("Passwort zu kurz für Benutzer: " + username);
             return false;
@@ -133,24 +125,21 @@ public class LoginController {
 
         String trimmedUsername = username.trim();
 
-        // Zuerst gegen Standard-Admin aus config.json prüfen
         AppConfig.AdminConfig adminConfig = appConfig.getAdminConfig();
-        if (adminConfig.getUsername().equals(trimmedUsername) && 
-            adminConfig.getPassword().equals(password)) {
+        if (adminConfig.username().equals(trimmedUsername) &&
+            adminConfig.password().equals(password)) {
             LOGGER.info("Erfolgreiche Authentifizierung gegen Standard-Admin aus config.json: " + trimmedUsername);
             return true;
         }
 
-        // Dann gegen Standard-Benutzer aus config.json prüfen
         for (AppConfig.UserConfig userConfig : appConfig.getDefaultUsers()) {
-            if (userConfig.getUsername().equals(trimmedUsername) && 
-                userConfig.getPassword().equals(password)) {
+            if (userConfig.username().equals(trimmedUsername) &&
+                userConfig.password().equals(password)) {
                 LOGGER.info("Erfolgreiche Authentifizierung gegen Standard-Benutzer aus config.json: " + trimmedUsername);
                 return true;
             }
         }
 
-        // Fallback zur datenbankbasierten Authentifizierung
         boolean dbAuth = this.userManager.authenticateUser(trimmedUsername, password);
         if (dbAuth) {
             LOGGER.info("Erfolgreiche Authentifizierung gegen Datenbank: " + trimmedUsername);
@@ -174,45 +163,33 @@ public class LoginController {
         loginAttempts.remove(clientIp);
     }
 
-    /**
-     * Ermittelt die Benutzerrolle basierend auf der Authentifizierungsquelle
-     */
     private String getUserRole(String username) {
-        // Prüfe Admin aus config.json
         AppConfig.AdminConfig adminConfig = appConfig.getAdminConfig();
-        if (adminConfig.getUsername().equals(username)) {
-            return adminConfig.getRole();
+        if (adminConfig.username().equals(username)) {
+            return adminConfig.role();
         }
 
-        // Prüfe Standard-Benutzer aus config.json
         for (AppConfig.UserConfig userConfig : appConfig.getDefaultUsers()) {
-            if (userConfig.getUsername().equals(username)) {
-                return userConfig.getRole();
+            if (userConfig.username().equals(username)) {
+                return userConfig.role();
             }
         }
 
-        // Fallback für Datenbankbenutzer - Standard-Rolle
         return "user";
     }
 
-    /**
-     * Gibt die Berechtigungen für den aktuellen Benutzer zurück
-     */
     private java.util.List<String> getUserPermissions(String username) {
-        // Prüfe Admin aus config.json
         AppConfig.AdminConfig adminConfig = appConfig.getAdminConfig();
-        if (adminConfig.getUsername().equals(username)) {
-            return adminConfig.getPermissions();
+        if (adminConfig.username().equals(username)) {
+            return adminConfig.permissions();
         }
 
-        // Prüfe Standard-Benutzer aus config.json
         for (AppConfig.UserConfig userConfig : appConfig.getDefaultUsers()) {
-            if (userConfig.getUsername().equals(username)) {
-                return userConfig.getPermissions();
+            if (userConfig.username().equals(username)) {
+                return userConfig.permissions();
             }
         }
 
-        // Fallback für Datenbankbenutzer - Standard-Berechtigungen
-        return java.util.List.of("dashboard_access");
+        return List.of("dashboard_access");
     }
 }

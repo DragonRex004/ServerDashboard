@@ -36,7 +36,6 @@ public class DatabaseResult {
                 rows.clear();
             }
         } catch (UnsupportedOperationException e) {
-            // Liste ist unveränderlich, nichts zu tun
             System.out.println("DatabaseResult: Liste ist unveränderlich, close() übersprungen");
         }
     }

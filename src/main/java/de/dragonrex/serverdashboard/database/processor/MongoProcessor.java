@@ -17,9 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * MongoDB-Datenbankprozessor mit konsistenter Fehlerbehandlung
- */
 public class MongoProcessor implements IProcessor {
     protected final Database database;
     protected final String databaseName;
@@ -40,7 +37,6 @@ public class MongoProcessor implements IProcessor {
             this.client = MongoClients.create(settings);
             this.mongoDatabase = this.client.getDatabase(this.databaseName);
 
-            // Teste die Verbindung
             this.mongoDatabase.listCollectionNames().first();
         } catch (Exception e) {
             throw new RuntimeException("Failed to establish MongoDB connection to database: " + this.databaseName, e);
@@ -134,13 +130,9 @@ public class MongoProcessor implements IProcessor {
 
     @Override
     public Connection getConnection() {
-        // MongoDB verwendet kein JDBC Connection-Modell
         return null;
     }
 
-    /**
-     * Hilfsmethode zum Erstellen von Filtern aus Argumenten
-     */
     private List<Bson> createFiltersFromArgs(Object[] args, int startIndex) {
         List<Bson> filters = new ArrayList<>();
         for (int i = startIndex; i < args.length; i++) {
@@ -152,9 +144,6 @@ public class MongoProcessor implements IProcessor {
         return filters;
     }
 
-    /**
-     * Gibt den Namen des Datenbanktyps zurück
-     */
     protected String getDatabaseType() {
         return "MongoDB";
     }

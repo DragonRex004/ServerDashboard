@@ -33,16 +33,13 @@ public class ServerDashboard {
     private final Javalin app;
 
     public ServerDashboard() {
-        // Lade Hauptkonfiguration
         this.appConfig = new AppConfig("config/config.json");
 
-        // Konfiguriere Logging basierend auf config.json
         configureLogging();
 
         LOGGER.info("=== " + appConfig.getApplicationName() + " v" + appConfig.getApplicationVersion() + " wird gestartet ===");
         LOGGER.info("Umgebung: " + appConfig.getEnvironment());
 
-        // Lade Datenbankkonfiguration
         this.configManager = new ConfigManager();
         Path databaseConfigPath = Path.of("config/database.json");
         this.configManager.initializeConfig(databaseConfigPath);
@@ -50,19 +47,16 @@ public class ServerDashboard {
         databaseConfig.addDefault("type", "SQLITE");
         databaseConfig.addDefault("database", "database.db");
 
-        // Erstelle Datenbankordner falls er nicht existiert
         String jdbcUrl = databaseConfig.config().getString("jdbc");
         if (jdbcUrl.startsWith("jdbc:sqlite:")) {
             ensureDatabaseDirectoryExists(jdbcUrl);
         }
 
-        // Initialisiere Datenbank
         this.database = new Database(jdbcUrl);
         if (this.database.getNoSQL().isEmpty() || !this.database.getNoSQL().get()) {
             this.database.configure();
         }
 
-        // Wähle Datenbankprozessor
         IProcessor processor = createDatabaseProcessor(databaseConfig);
 
         try {
@@ -71,10 +65,9 @@ public class ServerDashboard {
         } catch (Exception e) {
             LOGGER.severe("Fehler beim Verbinden zur Datenbank: " + e.getMessage());
 
-            // Fallback zu SQLite falls MongoDB nicht verfügbar
             if ("MONGODB".equals(databaseConfig.config().getString("type"))) {
                 LOGGER.info("Fallback zu SQLite-Datenbank...");
-                this.database.configure(); // Für SQLite konfigurieren
+                this.database.configure();
                 processor = new SQLiteProcessor(this.database);
                 processor.connect();
                 LOGGER.info("SQLite-Fallback-Verbindung hergestellt");
@@ -83,15 +76,12 @@ public class ServerDashboard {
             }
         }
 
-        // Initialisiere Datenbank-Handler und Benutzerverwaltung
         this.databaseHandler = new DatabaseHandler(database, processor);
         this.userManager = new UserManager(databaseHandler, appConfig);
         this.userManager.loadUser();
 
-        // Erstelle und konfiguriere Javalin-App
         this.app = createJavalinApp();
 
-        // Initialisiere Controller
         new LoginController(app, this.userManager, appConfig);
         new DashboardController(app, appConfig);
         new ApiController(app, appConfig);
@@ -102,14 +92,13 @@ public class ServerDashboard {
 
         if (appConfig.isDevelopment()) {
             LOGGER.info("=== ENTWICKLUNGSMODUS AKTIV ===");
-            LOGGER.info("Admin-Login: " + appConfig.getAdminConfig().getUsername() + " / " + appConfig.getAdminConfig().getPassword());
+            LOGGER.info("Admin-Login: " + appConfig.getAdminConfig().username() + " / " + appConfig.getAdminConfig().password());
         }
     }
 
     private void configureLogging() {
         Logger rootLogger = Logger.getLogger("");
 
-        // Setze Log-Level basierend auf Konfiguration
         Level logLevel = switch (appConfig.getLoggingLevel().toUpperCase()) {
             case "DEBUG" -> Level.FINE;
             case "INFO" -> Level.INFO;
@@ -121,7 +110,6 @@ public class ServerDashboard {
         rootLogger.setLevel(logLevel);
 
         if (!appConfig.isConsoleEnabled()) {
-            // Console-Handler deaktivieren falls konfiguriert
             rootLogger.getHandlers()[0].setLevel(Level.OFF);
         }
 
@@ -159,9 +147,7 @@ public class ServerDashboard {
         return Javalin.create(config -> {
             config.staticFiles.add("/public");
 
-            // Development-spezifische Einstellungen
             if (appConfig.isDevelopment()) {
-                // In Javalin 6.x wird Development Logging über Plugins aktiviert
                 config.bundledPlugins.enableDevLogging();
                 config.showJavalinBanner = true;
             } else {
@@ -171,9 +157,6 @@ public class ServerDashboard {
         }).start(appConfig.getApplicationPort());
     }
 
-    /**
-     * Stellt sicher, dass das Verzeichnis für die SQLite-Datenbankdatei existiert
-     */
     private void ensureDatabaseDirectoryExists(String jdbcUrl) {
         String filePath = jdbcUrl.substring("jdbc:sqlite:".length());
         Path databasePath = Paths.get(filePath);
@@ -190,9 +173,6 @@ public class ServerDashboard {
         }
     }
 
-    /**
-     * Beendet die Anwendung ordnungsgemäß
-     */
     public void shutdown() {
         LOGGER.info("Server wird heruntergefahren...");
         if (app != null) {
@@ -208,7 +188,6 @@ public class ServerDashboard {
         try {
             ServerDashboard dashboard = new ServerDashboard();
 
-            // Shutdown Hook für ordnungsgemäße Beendigung
             Runtime.getRuntime().addShutdownHook(new Thread(dashboard::shutdown));
 
         } catch (Exception e) {

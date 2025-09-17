@@ -9,10 +9,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-/**
- * Abstrakte Basisklasse für alle SQL-basierten Datenbankprozessoren.
- * Diese Klasse stellt gemeinsame Funktionalität für MySQL, PostgreSQL, MariaDB und SQLite bereit.
- */
 public abstract class AbstractSQLProcessor implements IProcessor {
     protected final Database database;
     protected HikariPool pool;
@@ -25,7 +21,6 @@ public abstract class AbstractSQLProcessor implements IProcessor {
     public void connect() {
         try {
             this.pool = new HikariPool(this.database.getConfig());
-            // Teste die Verbindung
             try (Connection connection = this.pool.getConnection();
                  PreparedStatement statement = connection.prepareStatement("SELECT 1")) {
                 statement.setQueryTimeout(15);
@@ -56,7 +51,6 @@ public abstract class AbstractSQLProcessor implements IProcessor {
         try (Connection connection = this.pool.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
 
-            // Setze Parameter
             for (int i = 0; i < args.length; i++) {
                 statement.setObject(i + 1, args[i]);
             }
@@ -72,15 +66,12 @@ public abstract class AbstractSQLProcessor implements IProcessor {
         try (Connection connection = this.pool.getConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
 
-            // Setze Parameter
             for (int i = 0; i < args.length; i++) {
                 statement.setObject(i + 1, args[i]);
             }
 
-            // Führe Update aus
             int affectedRows = statement.executeUpdate();
 
-            // Erstelle Ergebnis mit betroffenen Zeilen
             return createUpdateResult(affectedRows);
         } catch (SQLException e) {
             throw new RuntimeException("Failed to execute update on " + getDatabaseType() + ": " + query, e);
@@ -96,17 +87,11 @@ public abstract class AbstractSQLProcessor implements IProcessor {
         }
     }
 
-    /**
-     * Erstellt ein DatabaseResult für Update-Operationen
-     */
     private DatabaseResult createUpdateResult(int affectedRows) {
         DatabaseResult.Row row = new DatabaseResult.Row();
         row.put("affectedRows", affectedRows);
         return new DatabaseResult(java.util.List.of(row));
     }
 
-    /**
-     * Gibt den Namen des Datenbanktyps zurück (für Logging und Fehlermeldungen)
-     */
     protected abstract String getDatabaseType();
 }

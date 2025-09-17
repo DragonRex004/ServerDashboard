@@ -31,6 +31,6 @@ public class Database {
         config.setMinimumIdle(1);
         config.setJdbcUrl(this.jdbcUrl);
         this.username.ifPresent(username -> config.setUsername(username));
-        this.password.ifPresent(password -> config.setUsername(password));
+        this.password.ifPresent(password -> config.setPassword(password));
     }
 }

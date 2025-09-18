@@ -1,0 +1,4 @@
+{
+  "type": "SQLITE",
+  "jdbc": "jdbc:sqlite:data/server_dashboard.db"
+}

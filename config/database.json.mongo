@@ -1,0 +1,5 @@
+{
+  "type": "MONGODB",
+  "jdbc": "mongodb://localhost:27017",
+  "database": "server_dashboard"
+}

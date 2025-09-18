@@ -1,6 +1,6 @@
-package de.dragonrex.controller;
+package de.dragonrex.serverdashboard.controller;
 
-import de.dragonrex.models.ServerStatus;
+import de.dragonrex.serverdashboard.models.ServerStatus;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJackson;
 
@@ -9,11 +9,10 @@ public class WebSocketController {
 
     public WebSocketController(Javalin app) {
 
-        /*
+        // TEST-DATA
         this.serverStatus.setServerName("GMod-Server");
         this.serverStatus.setCurrentPlayers(5);
         this.serverStatus.setMaxPlayers(30);
-         */
 
         app.ws("/ws/serverstatus", ws -> {
             ws.onConnect(ctx -> System.out.println("Gmod Server-Connection established."));
